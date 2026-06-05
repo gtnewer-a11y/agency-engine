@@ -1,0 +1,412 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Classroom Agency Engine</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.14.0/dist/tabler-icons.min.css">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Syne:wght@400;600;700&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --ink:#1a1a2e;--ink2:#4a4a6a;--ink3:#8888aa;
+  --bg:#f8f7ff;--bg2:#ffffff;--bg3:#f0eeff;
+  --accent:#6c47ff;--accent2:#ff6b9d;--accent3:#00d4aa;
+  --gold:#ffb800;--warn:#ff6b35;
+  --border:rgba(108,71,255,0.15);
+}
+body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--ink);min-height:100vh}
+.shell{display:grid;grid-template-columns:220px 1fr;min-height:100vh}
+
+/* Sidebar */
+.sidebar{background:var(--bg2);border-right:1px solid var(--border);padding:24px 0;display:flex;flex-direction:column;position:sticky;top:0;height:100vh;overflow-y:auto}
+.sidebar-logo{padding:0 20px 24px;border-bottom:1px solid var(--border)}
+.logo-badge{font-family:'Syne',sans-serif;font-size:11px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:var(--accent);background:rgba(108,71,255,0.08);border-radius:6px;padding:3px 8px;display:inline-block;margin-bottom:8px}
+.logo-title{font-family:'Syne',sans-serif;font-size:15px;font-weight:700;color:var(--ink);line-height:1.3}
+.nav{padding:16px 12px 0;flex:1}
+.nav-label{font-size:10px;font-weight:500;letter-spacing:0.1em;text-transform:uppercase;color:var(--ink3);padding:0 8px;margin-bottom:8px;margin-top:8px}
+.nav-item{display:flex;align-items:center;gap:10px;padding:9px 10px;border-radius:8px;cursor:pointer;font-size:13.5px;color:var(--ink2);transition:all 0.15s;margin-bottom:2px;border:none;background:none;width:100%;text-align:left}
+.nav-item:hover{background:var(--bg3);color:var(--ink)}
+.nav-item.active{background:rgba(108,71,255,0.1);color:var(--accent);font-weight:500}
+.nav-item i{font-size:16px;opacity:0.7;flex-shrink:0}
+.nav-item.active i{opacity:1}
+.status-dot{width:7px;height:7px;border-radius:50%;background:#ccc;margin-left:auto;flex-shrink:0}
+.status-dot.live{background:var(--accent3);animation:pulse 2s infinite}
+@keyframes pulse{0%,100%{box-shadow:0 0 0 0 rgba(0,212,170,0.4)}50%{box-shadow:0 0 0 4px rgba(0,212,170,0)}}
+.sidebar-footer{padding:16px 20px;border-top:1px solid var(--border);margin-top:auto}
+
+/* Main */
+.main{background:var(--bg);overflow-y:auto}
+.panel{display:none;padding:28px 32px;max-width:1100px}
+.panel.active{display:block}
+
+/* Page header */
+.page-hd{margin-bottom:28px}
+.page-hd h1{font-family:'Syne',sans-serif;font-size:22px;font-weight:700;color:var(--ink)}
+.page-hd p{font-size:14px;color:var(--ink3);margin-top:4px}
+
+/* Metrics */
+.metric-row{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:24px}
+.metric-row-3{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:24px}
+.metric{background:var(--bg2);border:1px solid var(--border);border-radius:12px;padding:16px}
+.metric-label{font-size:11px;font-weight:500;letter-spacing:0.06em;text-transform:uppercase;color:var(--ink3);margin-bottom:8px}
+.metric-val{font-family:'Syne',sans-serif;font-size:26px;font-weight:700;color:var(--ink)}
+.metric-sub{font-size:11px;color:var(--ink3);margin-top:3px}
+.chip{display:inline-block;font-size:10px;font-weight:500;border-radius:4px;padding:2px 7px;margin-top:6px}
+.chip-up{background:rgba(0,212,170,0.12);color:#009977}
+.chip-down{background:rgba(255,107,53,0.12);color:var(--warn)}
+
+/* Cards */
+.card{background:var(--bg2);border:1px solid var(--border);border-radius:12px;padding:20px;margin-bottom:16px}
+.card-hd{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px}
+.card-title{font-family:'Syne',sans-serif;font-size:14px;font-weight:600;color:var(--ink);display:flex;align-items:center;gap:8px}
+.card-title i{color:var(--accent);font-size:16px}
+.two-col{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+
+/* Buttons */
+.btn{display:inline-flex;align-items:center;gap:8px;padding:9px 18px;border-radius:8px;font-family:'DM Sans',sans-serif;font-size:13.5px;font-weight:500;cursor:pointer;border:none;transition:all 0.15s}
+.btn-primary{background:var(--accent);color:#fff}
+.btn-primary:hover:not(:disabled){background:#5a38e8;transform:translateY(-1px)}
+.btn-primary:disabled{opacity:0.5;cursor:not-allowed}
+.btn-pink{background:var(--accent2);color:#fff}
+.btn-pink:hover:not(:disabled){background:#e5507f;transform:translateY(-1px)}
+.btn-pink:disabled{opacity:0.5;cursor:not-allowed}
+.btn-secondary{background:var(--bg2);color:var(--ink2);border:1px solid var(--border)}
+.btn-secondary:hover{border-color:var(--accent);color:var(--accent)}
+.btn-danger{background:rgba(255,107,53,0.1);color:var(--warn);border:1px solid rgba(255,107,53,0.2)}
+.btn-success{background:rgba(0,212,170,0.1);color:#009977;border:1px solid rgba(0,212,170,0.2)}
+.btn-sm{padding:6px 14px;font-size:12px}
+
+/* Form */
+label{font-size:12px;font-weight:500;letter-spacing:0.04em;text-transform:uppercase;color:var(--ink3);display:block;margin-bottom:5px}
+input[type=text],input[type=email],input[type=number],input[type=password],select,textarea{font-family:'DM Sans',sans-serif;font-size:13.5px;background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:9px 12px;color:var(--ink);outline:none;transition:border 0.15s;width:100%}
+input:focus,select:focus,textarea:focus{border-color:var(--accent);background:var(--bg2)}
+textarea{resize:vertical;min-height:110px;line-height:1.6}
+.form-group{display:flex;flex-direction:column;gap:5px;margin-bottom:14px}
+.form-row{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+
+/* Badges */
+.badge{display:inline-flex;align-items:center;gap:4px;font-size:11px;font-weight:600;padding:3px 9px;border-radius:100px}
+.badge-purple{background:rgba(108,71,255,0.12);color:var(--accent)}
+.badge-green{background:rgba(0,212,170,0.12);color:#009977}
+.badge-amber{background:rgba(255,184,0,0.15);color:#8a6800}
+.badge-red{background:rgba(255,107,53,0.12);color:var(--warn)}
+.badge-pink{background:rgba(255,107,157,0.12);color:#cc2060}
+.badge-live{background:rgba(0,212,170,0.12);color:#009977;animation:pulse 2s infinite}
+
+/* Leaderboard */
+.lb-row{display:flex;align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid var(--border);font-size:13.5px}
+.lb-row:last-child{border:none}
+.lb-rank{font-family:'DM Mono',monospace;font-size:13px;font-weight:500;width:28px;color:var(--ink3);flex-shrink:0}
+.lb-rank.top{color:var(--gold);font-weight:700}
+.lb-avatar{width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:600;flex-shrink:0}
+.lb-name{flex:1;font-weight:500;color:var(--ink)}
+.lb-pts{font-family:'DM Mono',monospace;font-size:13px;font-weight:500;color:var(--accent)}
+.lb-bar-wrap{width:80px;height:6px;background:var(--bg3);border-radius:3px;overflow:hidden;flex-shrink:0}
+.lb-bar{height:100%;border-radius:3px;background:var(--accent);transition:width 0.6s}
+
+/* Feed */
+.log-row{display:flex;align-items:flex-start;gap:12px;padding:10px 0;border-bottom:1px solid var(--border);font-size:13px}
+.log-row:last-child{border:none}
+.log-icon{width:30px;height:30px;border-radius:8px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.log-icon i{font-size:15px}
+.log-body{flex:1;min-width:0}
+.log-name{font-weight:500;color:var(--ink)}
+.log-activity{color:var(--ink2);margin-top:1px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.log-time{font-family:'DM Mono',monospace;font-size:11px;color:var(--ink3);margin-top:2px}
+.log-pts{font-family:'DM Mono',monospace;font-size:13px;font-weight:600;color:var(--accent3);flex-shrink:0;padding-top:5px}
+
+/* Result box */
+.result-box{background:var(--bg3);border:1px solid rgba(108,71,255,0.2);border-radius:10px;padding:18px;margin-top:16px;display:none}
+.result-box.show{display:block}
+.result-score{font-family:'Syne',sans-serif;font-size:32px;font-weight:700;color:var(--accent);margin-bottom:4px}
+
+/* Memo */
+.memo-output{background:var(--bg2);border:1px solid var(--border);border-radius:12px;padding:24px;margin-top:20px;display:none;line-height:1.7}
+.memo-output.show{display:block}
+.memo-meta{font-size:12px;color:var(--ink3);font-family:'DM Mono',monospace;margin-bottom:20px;padding-bottom:14px;border-bottom:1px solid var(--border)}
+.memo-section-hd{font-size:11px;text-transform:uppercase;letter-spacing:0.08em;color:var(--accent);font-weight:600;margin:20px 0 8px;display:flex;align-items:center;gap:6px}
+.passport-box{background:rgba(108,71,255,0.06);border:1px solid rgba(108,71,255,0.2);border-radius:8px;padding:14px;margin-top:8px;font-size:13px;line-height:1.7}
+
+/* Advisor controls */
+.stream-card{background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:14px;cursor:pointer;transition:all 0.15s;display:flex;align-items:center;justify-content:space-between}
+.stream-card:hover{border-color:var(--accent)}
+.stream-card.on{border-color:var(--accent);background:rgba(108,71,255,0.04)}
+.toggle{width:36px;height:20px;border-radius:10px;background:#ddd;position:relative;transition:background 0.2s;cursor:pointer;border:none;flex-shrink:0}
+.toggle::after{content:'';position:absolute;top:2px;left:2px;width:16px;height:16px;border-radius:50%;background:#fff;transition:transform 0.2s;box-shadow:0 1px 3px rgba(0,0,0,0.2)}
+.toggle.on{background:var(--accent)}
+.toggle.on::after{transform:translateX(16px)}
+
+/* Loading */
+.loading{display:none;align-items:center;gap:10px;color:var(--ink3);font-size:13px;padding:16px 0}
+.loading.show{display:flex}
+.dots span{display:inline-block;width:6px;height:6px;border-radius:50%;background:var(--accent);animation:dot 1.2s infinite;margin:0 2px}
+.dots span:nth-child(2){animation-delay:0.2s}
+.dots span:nth-child(3){animation-delay:0.4s}
+@keyframes dot{0%,80%,100%{opacity:0.2;transform:scale(0.8)}40%{opacity:1;transform:scale(1)}}
+
+/* Alert */
+.alert{padding:12px 16px;border-radius:8px;font-size:13px;margin-bottom:14px;display:none}
+.alert.show{display:block}
+.alert-success{background:rgba(0,212,170,0.1);border:1px solid rgba(0,212,170,0.3);color:#007a5e}
+.alert-error{background:rgba(255,107,53,0.1);border:1px solid rgba(255,107,53,0.3);color:var(--warn)}
+.alert-info{background:rgba(108,71,255,0.08);border:1px solid rgba(108,71,255,0.2);color:var(--accent)}
+
+/* Paper cards */
+.paper-card{background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:16px;margin-bottom:10px}
+.paper-title{font-size:13.5px;font-weight:500;color:var(--ink);margin-bottom:4px}
+.paper-abstract{font-size:12px;color:var(--ink3);line-height:1.5;margin-bottom:8px}
+.tag{font-size:10px;font-weight:500;padding:2px 8px;border-radius:4px;background:rgba(108,71,255,0.08);color:var(--accent);display:inline-block;margin:2px}
+
+/* Settings */
+.settings-row{display:flex;align-items:center;justify-content:space-between;padding:14px 0;border-bottom:1px solid var(--border)}
+.settings-row:last-child{border:none}
+.settings-label{font-weight:500;color:var(--ink);font-size:13.5px}
+.settings-desc{font-size:12px;color:var(--ink3);margin-top:2px}
+.settings-input{width:90px;text-align:center}
+
+/* Scroll */
+.scroll-area{max-height:380px;overflow-y:auto;scrollbar-width:thin;scrollbar-color:var(--border) transparent}
+
+/* Toast */
+#toast{position:fixed;bottom:24px;right:24px;background:var(--ink);color:#fff;padding:12px 20px;border-radius:10px;font-size:13px;font-weight:500;transform:translateY(80px);opacity:0;transition:all 0.3s;z-index:999;max-width:320px}
+#toast.show{transform:translateY(0);opacity:1}
+
+/* Config warning banner */
+.config-banner{background:rgba(255,184,0,0.1);border:1px solid rgba(255,184,0,0.3);border-radius:10px;padding:14px 18px;margin-bottom:20px;font-size:13px;color:#7a5800;display:flex;align-items:flex-start;gap:10px}
+.config-banner i{font-size:18px;flex-shrink:0;margin-top:1px;color:var(--gold)}
+
+@media(max-width:768px){
+  .shell{grid-template-columns:1fr}
+  .sidebar{display:none}
+  .metric-row,.metric-row-3{grid-template-columns:1fr 1fr}
+  .two-col,.form-row{grid-template-columns:1fr}
+  .panel{padding:20px 16px}
+}
+</style>
+</head>
+<body>
+
+<div id="toast"></div>
+
+<div class="shell">
+  <aside class="sidebar">
+    <div class="sidebar-logo">
+      <div class="logo-badge">Agency Engine</div>
+      <div class="logo-title">Classroom<br>Passport System</div>
+    </div>
+    <nav class="nav">
+      <div class="nav-label">Overview</div>
+      <button class="nav-item active" onclick="show('dashboard',this)"><i class="ti ti-layout-dashboard"></i>Dashboard<span class="status-dot live"></span></button>
+      <button class="nav-item" onclick="show('leaderboard',this)"><i class="ti ti-trophy"></i>Leaderboard</button>
+      <div class="nav-label">Agents</div>
+      <button class="nav-item" onclick="show('clerk',this)"><i class="ti ti-robot"></i>Tally Clerk<span class="status-dot live"></span></button>
+      <button class="nav-item" onclick="show('advisor',this)"><i class="ti ti-brain"></i>Advisor & Reporter</button>
+      <div class="nav-label">Resources</div>
+      <button class="nav-item" onclick="show('research',this)"><i class="ti ti-book"></i>Research Library</button>
+      <button class="nav-item" onclick="show('settings',this)"><i class="ti ti-settings"></i>Settings</button>
+    </nav>
+    <div class="sidebar-footer">
+      <div style="font-size:11px;color:var(--ink3);font-weight:500;margin-bottom:3px">Powered by</div>
+      <div style="font-family:'DM Mono',monospace;font-size:11px;color:var(--accent)">Claude claude-sonnet-4-20250514</div>
+      <div style="font-size:10px;color:var(--ink3);margin-top:8px" id="sync-status">⬤ Not connected</div>
+    </div>
+  </aside>
+
+  <main class="main">
+
+    <!-- DASHBOARD -->
+    <div class="panel active" id="panel-dashboard">
+      <div class="page-hd">
+        <h1>Control Room</h1>
+        <p>Live overview of your Agency Passport program</p>
+      </div>
+      <div id="banner-dashboard" class="config-banner" style="display:none">
+        <i class="ti ti-alert-triangle"></i>
+        <div><strong>Setup required:</strong> Add your Google Apps Script URL and API keys in <a href="#" onclick="show('settings',document.querySelector('[onclick*=settings]'));return false" style="color:inherit;font-weight:600">Settings</a> to enable live data sync.</div>
+      </div>
+      <div class="metric-row">
+        <div class="metric"><div class="metric-label">Active Students</div><div class="metric-val" id="m-active">—</div><div class="metric-sub">portfolios monitored</div></div>
+        <div class="metric"><div class="metric-label">Submissions Today</div><div class="metric-val" id="m-today">—</div><div class="metric-sub">graded automatically</div></div>
+        <div class="metric"><div class="metric-label">Points Awarded</div><div class="metric-val" id="m-pts">—</div><div class="metric-sub">this week</div></div>
+        <div class="metric"><div class="metric-label">Dormant Portfolios</div><div class="metric-val" id="m-dormant">—</div><div class="metric-sub" id="m-dormant-sub">no activity 7+ days</div><span class="chip chip-down" id="m-dormant-chip" style="display:none">needs attention</span></div>
+      </div>
+      <div class="two-col">
+        <div class="card">
+          <div class="card-hd"><div class="card-title"><i class="ti ti-activity"></i>Live Activity Feed</div><span class="badge badge-live">Live</span></div>
+          <div id="live-feed" class="scroll-area"><div style="text-align:center;padding:40px 0;color:var(--ink3);font-size:13px"><i class="ti ti-loader" style="font-size:24px;display:block;margin-bottom:8px"></i>Connect to load activity</div></div>
+        </div>
+        <div class="card">
+          <div class="card-hd"><div class="card-title"><i class="ti ti-chart-bar"></i>Activity Breakdown</div></div>
+          <div id="activity-breakdown"><div style="text-align:center;padding:40px 0;color:var(--ink3);font-size:13px">No data yet</div></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- LEADERBOARD -->
+    <div class="panel" id="panel-leaderboard">
+      <div class="page-hd"><h1>Anonymous Leaderboard</h1><p>Student aliases only — real names are never exposed publicly</p></div>
+      <div class="card">
+        <div class="card-hd">
+          <div class="card-title"><i class="ti ti-trophy"></i>Passport Rankings</div>
+          <div style="display:flex;gap:8px">
+            <button class="btn btn-secondary btn-sm" onclick="loadLeaderboard()"><i class="ti ti-refresh"></i>Refresh</button>
+            <button class="btn btn-secondary btn-sm" onclick="show('settings',document.querySelectorAll('.nav-item')[5])"><i class="ti ti-link"></i>Public Link</button>
+          </div>
+        </div>
+        <div id="lb-list" class="scroll-area"><div style="text-align:center;padding:40px 0;color:var(--ink3);font-size:13px">Connect to load leaderboard</div></div>
+      </div>
+    </div>
+
+    <!-- TALLY CLERK -->
+    <div class="panel" id="panel-clerk">
+      <div class="page-hd">
+        <h1>Agent 1 — Tally Clerk</h1>
+        <p>Automated grading via Claude · zero-temperature evaluation against your rubric</p>
+      </div>
+      <div class="metric-row-3">
+        <div class="metric"><div class="metric-label">Graded Today</div><div class="metric-val" id="c-graded">0</div><div class="metric-sub">this session</div></div>
+        <div class="metric"><div class="metric-label">Avg Score</div><div class="metric-val" id="c-avg">—</div><div class="metric-sub">points per entry</div></div>
+        <div class="metric"><div class="metric-label">Last Synced</div><div class="metric-val" id="c-sync" style="font-size:16px">Never</div><div class="metric-sub">to Google Sheets</div></div>
+      </div>
+
+      <div class="card">
+        <div class="card-hd"><div class="card-title"><i class="ti ti-file-plus"></i>Submit Entry for Grading</div><span class="badge badge-purple">AI Graded</span></div>
+        <div id="alert-clerk" class="alert"></div>
+        <div class="form-row">
+          <div class="form-group"><label>Student Alias</label><input type="text" id="alias" placeholder="e.g. StargazerX"></div>
+          <div class="form-group"><label>Activity Type (optional)</label>
+            <select id="activity-type">
+              <option value="">— let AI identify —</option>
+              <option>Letter to Future Self</option>
+              <option>Classroom Receipt</option>
+              <option>Concept Map</option>
+              <option>Reflection Journal</option>
+              <option>Peer Review</option>
+              <option>Research Synthesis</option>
+              <option>Creative Extension</option>
+            </select>
+          </div>
+        </div>
+        <div class="form-group"><label>Submission Text (paste Padlet entry)</label><textarea id="submission" placeholder="Paste the student's Padlet portfolio entry here..." style="min-height:140px"></textarea></div>
+        <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">
+          <button class="btn btn-primary" id="grade-btn" onclick="gradeSubmission()"><i class="ti ti-sparkles"></i>Grade with AI</button>
+          <button class="btn btn-secondary" onclick="clearGrade()"><i class="ti ti-x"></i>Clear</button>
+          <div class="loading" id="grade-loading"><div class="dots"><span></span><span></span><span></span></div><span>Evaluating submission…</span></div>
+        </div>
+
+        <div class="result-box" id="result-box">
+          <div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:12px">
+            <div>
+              <div class="result-score" id="res-pts">— pts</div>
+              <div style="font-size:14px;font-weight:500;color:var(--ink)" id="res-activity">—</div>
+            </div>
+            <span id="res-tier" class="badge" style="font-size:13px;padding:5px 14px"></span>
+          </div>
+          <div style="font-size:13px;color:var(--ink2);line-height:1.7" id="res-feedback"></div>
+          <div style="margin-top:14px;display:flex;gap:8px;flex-wrap:wrap">
+            <button class="btn btn-success btn-sm" id="commit-btn" onclick="commitToSheets()"><i class="ti ti-check"></i>Commit to Sheets</button>
+            <button class="btn btn-danger btn-sm" onclick="flagReview()"><i class="ti ti-flag"></i>Flag for Review</button>
+            <button class="btn btn-secondary btn-sm" onclick="clearGrade()"><i class="ti ti-x"></i>Discard</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-hd"><div class="card-title"><i class="ti ti-list-check"></i>Transaction Log (this session)</div></div>
+        <div id="transactions" class="scroll-area"><div style="text-align:center;padding:24px 0;color:var(--ink3);font-size:13px">No transactions yet this session</div></div>
+      </div>
+    </div>
+
+    <!-- ADVISOR -->
+    <div class="panel" id="panel-advisor">
+      <div class="page-hd">
+        <h1>Agent 2 — Advisor & Reporter</h1>
+        <p>On-demand strategic analysis · literature-backed executive memo delivered to Gmail</p>
+      </div>
+
+      <div class="card" style="margin-bottom:16px">
+        <div class="card-hd"><div class="card-title"><i class="ti ti-database"></i>Active Data Streams</div></div>
+        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px">
+          <div class="stream-card on" id="sc-diary" onclick="toggleStream('diary')">
+            <div><div style="font-size:10px;text-transform:uppercase;letter-spacing:0.06em;color:var(--ink3);font-weight:500;margin-bottom:4px">Stream 1</div><div style="font-size:13px;font-weight:500;color:var(--ink)">Classroom Diary</div></div>
+            <button class="toggle on" id="t-diary" aria-label="Toggle classroom diary"></button>
+          </div>
+          <div class="stream-card on" id="sc-engage" onclick="toggleStream('engage')">
+            <div><div style="font-size:10px;text-transform:uppercase;letter-spacing:0.06em;color:var(--ink3);font-weight:500;margin-bottom:4px">Stream 2</div><div style="font-size:13px;font-weight:500;color:var(--ink)">Engagement Data</div></div>
+            <button class="toggle on" id="t-engage" aria-label="Toggle engagement data"></button>
+          </div>
+          <div class="stream-card on" id="sc-research" onclick="toggleStream('research')">
+            <div><div style="font-size:10px;text-transform:uppercase;letter-spacing:0.06em;color:var(--ink3);font-weight:500;margin-bottom:4px">Stream 3</div><div style="font-size:13px;font-weight:500;color:var(--ink)">Research Library</div></div>
+            <button class="toggle on" id="t-research" aria-label="Toggle research library"></button>
+          </div>
+        </div>
+      </div>
+
+      <div class="card" style="margin-bottom:16px">
+        <div class="card-hd"><div class="card-title"><i class="ti ti-pencil"></i>Classroom Diary</div><button class="btn btn-secondary btn-sm" onclick="saveDiaryEntry()"><i class="ti ti-device-floppy"></i>Save</button></div>
+        <div id="alert-diary" class="alert"></div>
+        <textarea id="diary-entry" placeholder="Log today's classroom observations, frustrations, patterns, or wins. These accumulate over time and feed the Advisor's analysis." style="min-height:100px"></textarea>
+        <div style="margin-top:8px;display:flex;gap:6px;flex-wrap:wrap" id="diary-history-labels"></div>
+      </div>
+
+      <div style="background:rgba(255,107,157,0.05);border:1px solid rgba(255,107,157,0.2);border-radius:10px;padding:18px;margin-bottom:20px">
+        <div style="display:flex;align-items:flex-start;gap:14px;flex-wrap:wrap">
+          <i class="ti ti-send" style="font-size:22px;color:var(--accent2);flex-shrink:0;margin-top:2px"></i>
+          <div style="flex:1;min-width:200px">
+            <div style="font-size:14px;font-weight:500;color:var(--ink);margin-bottom:2px">Generate Executive Memo</div>
+            <div style="font-size:12px;color:var(--ink3)">Claude synthesizes all active streams and emails a literature-backed strategy memo to your inbox.</div>
+          </div>
+          <input type="email" id="memo-email" placeholder="your@school.edu" style="width:210px;flex-shrink:0">
+          <button class="btn btn-pink" id="advisor-btn" onclick="runAdvisor()" style="flex-shrink:0"><i class="ti ti-sparkles"></i>Generate Memo</button>
+        </div>
+      </div>
+
+      <div class="loading" id="advisor-loading"><div class="dots"><span></span><span></span><span></span></div><span>Analyzing streams and synthesizing literature…</span></div>
+      <div id="alert-advisor" class="alert"></div>
+      <div class="memo-output" id="memo-output"></div>
+    </div>
+
+    <!-- RESEARCH LIBRARY -->
+    <div class="panel" id="panel-research">
+      <div class="page-hd"><h1>Research Library</h1><p>Academic abstracts powering Agent 2's recommendations — edit in Settings</p></div>
+      <div id="paper-list"></div>
+    </div>
+
+    <!-- SETTINGS -->
+    <div class="panel" id="panel-settings">
+      <div class="page-hd"><h1>Settings</h1><p>Configure your integrations, scoring rules, and research library</p></div>
+
+      <div class="card">
+        <div class="card-hd"><div class="card-title"><i class="ti ti-plug"></i>Integrations</div></div>
+        <div id="alert-settings" class="alert"></div>
+        <div class="form-group"><label>Google Apps Script URL</label><input type="text" id="cfg-gas-url" placeholder="https://script.google.com/macros/s/YOUR_DEPLOYMENT_ID/exec"></div>
+        <div class="form-group"><label>Anthropic API Key</label><input type="password" id="cfg-api-key" placeholder="sk-ant-..."></div>
+        <div class="form-group"><label>Padlet API Key</label><input type="password" id="cfg-padlet-key" placeholder="Your Padlet API key"></div>
+        <div class="form-group"><label>Padlet Board IDs (one per line, up to 70)</label><textarea id="cfg-padlet-boards" placeholder="abc123&#10;def456&#10;ghi789" style="min-height:80px;font-family:'DM Mono',monospace;font-size:12px"></textarea></div>
+        <div class="form-group"><label>Instructor Gmail (for memo delivery)</label><input type="email" id="cfg-email" placeholder="instructor@school.edu"></div>
+        <button class="btn btn-primary" onclick="saveConfig()"><i class="ti ti-check"></i>Save Configuration</button>
+      </div>
+
+      <div class="card">
+        <div class="card-hd"><div class="card-title"><i class="ti ti-adjustments"></i>Scoring Rules</div></div>
+        <div class="settings-row"><div><div class="settings-label">Low-effort (Classroom Receipts, brief check-ins)</div><div class="settings-desc">Under 80 words, surface-level</div></div><input type="number" class="settings-input" id="pts-low" value="10"> pts</div>
+        <div class="settings-row"><div><div class="settings-label">Mid-effort (Letters, Journals, Peer Reviews)</div><div class="settings-desc">80–300 words, genuine reflection</div></div><input type="number" class="settings-input" id="pts-mid" value="25"> pts</div>
+        <div class="settings-row"><div><div class="settings-label">High-effort (Research Synthesis, Creative)</div><div class="settings-desc">300+ words, academic integration</div></div><input type="number" class="settings-input" id="pts-high" value="50"> pts</div>
+        <div class="settings-row"><div><div class="settings-label">Dormant portfolio threshold</div><div class="settings-desc">Days without submission before alert</div></div><input type="number" class="settings-input" id="dormant-days" value="7"> days</div>
+        <div style="margin-top:14px"><button class="btn btn-primary" onclick="saveScoringRules()"><i class="ti ti-check"></i>Save Rules</button></div>
+      </div>
+
+      <div class="card">
+        <div class="card-hd"><div class="card-title"><i class="ti ti-book"></i>Research Library</div><button class="btn btn-secondary btn-sm" onclick="addPaper()"><i class="ti ti-plus"></i>Add Paper</button></div>
+        <div id="settings-papers"></div>
+      </div>
+    </div>
+
+  </main>
+</div>
+
+<script src="app.js"></script>
+</body>
+</html>
