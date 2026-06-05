@@ -492,12 +492,16 @@ async function runAdvisor() {
     const prompt = buildAdvisorPrompt(allDiary, lbSummary, papers);
 
     let memoText;
-    if (cfg.gasUrl) {
-      const result = await callGAS('advisor', { prompt, email: email || cfg.instructorEmail });
-      memoText = result.memo;
-    } else {
-      memoText = await callClaude(prompt, 1500);
-      if (email) toast('ℹ️ No Apps Script configured — memo displayed only, not emailed');
+    // Always generate memo directly via Claude for display
+    memoText = await callClaude(prompt, 1500);
+    // Then separately email via Apps Script if configured
+    if (cfg.gasUrl && (email || cfg.instructorEmail)) {
+      try {
+        await callGAS('sendEmail', { memo: memoText, email: email || cfg.instructorEmail });
+        toast('📧 Memo sent to ' + (email || cfg.instructorEmail));
+      } catch {
+        toast('⚠️ Memo generated but email failed — check Apps Script');
+      }
     }
 
     renderMemo(memoText);
