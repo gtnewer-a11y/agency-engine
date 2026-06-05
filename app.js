@@ -1,23 +1,22 @@
-S
 // ─── Classroom Agency Engine — app.js ───────────────────────────────────────
 // Calls Google Apps Script (backend) as the secure API proxy.
 // All Anthropic + Padlet calls happen server-side via Apps Script.
 // Config is stored in localStorage (never expose API keys in client JS).
- 
+
 const VERSION = '1.0.0';
- 
+
 // ─── Config ──────────────────────────────────────────────────────────────────
 const CFG_KEY = 'agency_engine_config';
 const DIARY_KEY = 'agency_engine_diary';
 const TXN_KEY = 'agency_engine_txns';
- 
+
 function getConfig() {
   try { return JSON.parse(localStorage.getItem(CFG_KEY) || '{}'); } catch { return {}; }
 }
 function saveConfigLocal(obj) {
   localStorage.setItem(CFG_KEY, JSON.stringify(obj));
 }
- 
+
 // ─── Research Library (default papers, editable in Settings) ─────────────────
 const DEFAULT_PAPERS = [
   {
@@ -56,7 +55,7 @@ const DEFAULT_PAPERS = [
     tags: ['Discussion', 'Equity', 'Participation']
   }
 ];
- 
+
 function getPapers() {
   try {
     const stored = localStorage.getItem('agency_papers');
@@ -66,7 +65,7 @@ function getPapers() {
 function savePapers(papers) {
   localStorage.setItem('agency_papers', JSON.stringify(papers));
 }
- 
+
 // ─── Activity definitions ─────────────────────────────────────────────────────
 const ACTIVITY_COLORS = {
   'Letter to Future Self': { icon: 'ti-mail', color: '#6c47ff' },
@@ -78,14 +77,14 @@ const ACTIVITY_COLORS = {
   'Creative Extension': { icon: 'ti-palette', color: '#fb923c' },
   'Other': { icon: 'ti-star', color: '#888' }
 };
- 
+
 function activityStyle(name) {
   for (const [k, v] of Object.entries(ACTIVITY_COLORS)) {
     if (name && name.toLowerCase().includes(k.toLowerCase().split(' ')[0].toLowerCase())) return v;
   }
   return ACTIVITY_COLORS['Other'];
 }
- 
+
 // ─── Navigation ───────────────────────────────────────────────────────────────
 function show(id, el) {
   document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
@@ -97,7 +96,7 @@ function show(id, el) {
   if (id === 'leaderboard') loadLeaderboard();
   if (id === 'dashboard') loadDashboard();
 }
- 
+
 // ─── Toast ────────────────────────────────────────────────────────────────────
 function toast(msg, duration = 3000) {
   const t = document.getElementById('toast');
@@ -105,7 +104,7 @@ function toast(msg, duration = 3000) {
   t.classList.add('show');
   setTimeout(() => t.classList.remove('show'), duration);
 }
- 
+
 function showAlert(id, msg, type = 'info') {
   const el = document.getElementById(id);
   if (!el) return;
@@ -113,7 +112,7 @@ function showAlert(id, msg, type = 'info') {
   el.className = `alert alert-${type} show`;
   setTimeout(() => el.classList.remove('show'), 6000);
 }
- 
+
 // ─── GAS Proxy call ───────────────────────────────────────────────────────────
 async function callGAS(action, payload = {}) {
   const cfg = getConfig();
@@ -130,7 +129,7 @@ async function callGAS(action, payload = {}) {
   try { return JSON.parse(text); }
   catch { throw new Error('Invalid response from Apps Script: ' + text.slice(0, 200)); }
 }
- 
+
 // ─── Direct Anthropic call (fallback when no GAS URL configured) ──────────────
 async function callClaude(prompt, maxTokens = 1000) {
   const cfg = getConfig();
@@ -148,46 +147,46 @@ async function callClaude(prompt, maxTokens = 1000) {
   if (data.error) throw new Error(data.error.message);
   return data.content.filter(b => b.type === 'text').map(b => b.text).join('');
 }
- 
+
 // ─── Agent 1: Tally Clerk ─────────────────────────────────────────────────────
 let sessionGrades = [];
 let sessionTotalPts = 0;
- 
+
 function buildGradingPrompt(alias, text, actType, cfg) {
   const low = cfg.ptsLow || 10;
   const mid = cfg.ptsMid || 25;
   const high = cfg.ptsHigh || 50;
   return `You are an automated grading agent for a gamified "Agency Passport" course. Evaluate the following student portfolio submission with strict, consistent rubric application.
- 
+
 SCORING RUBRIC:
 - ${low} points: Low-effort (Classroom Receipts, brief check-ins, under 80 words, surface-level or transactional)
 - ${mid} points: Mid-effort (Letters to Future Self, Concept Maps, Peer Reviews, Reflection Journals — 80-300 words, genuine personal insight, connects to course content)
 - ${high} points: High-effort (Research Synthesis, Creative Extensions — 300+ words, integrates academic concepts, demonstrates transfer of learning, original thinking)
- 
+
 ${actType ? `Suspected activity type: ${actType}` : 'Identify the activity type from the content.'}
- 
+
 STUDENT SUBMISSION (alias: ${alias || 'Anonymous'}):
 ${text}
- 
+
 Respond ONLY with this exact JSON. No other text, no markdown fences:
 {"points":${low},"activityType":"string","tier":"Low Effort","rationale":"2-3 sentences explaining the score","strengths":"one specific strength","growthEdge":"one area for improvement"}
- 
+
 Valid points values: ${low}, ${mid}, or ${high} only.`;
 }
- 
+
 async function gradeSubmission() {
   const alias = document.getElementById('alias').value.trim() || 'Anonymous';
   const text = document.getElementById('submission').value.trim();
   const actType = document.getElementById('activity-type').value;
   const cfg = getConfig();
- 
+
   if (!text) { showAlert('alert-clerk', 'Please paste a student submission first.', 'error'); return; }
   if (!cfg.apiKey && !cfg.gasUrl) { showAlert('alert-clerk', 'Add your Anthropic API key or Apps Script URL in Settings first.', 'error'); return; }
- 
+
   document.getElementById('grade-btn').disabled = true;
   document.getElementById('grade-loading').classList.add('show');
   document.getElementById('result-box').classList.remove('show');
- 
+
   try {
     let result;
     if (cfg.gasUrl) {
@@ -198,9 +197,9 @@ async function gradeSubmission() {
       const raw = await callClaude(buildGradingPrompt(alias, text, actType, cfg), 800);
       result = JSON.parse(raw.replace(/```json|```/g, '').trim());
     }
- 
+
     window._pendingGrade = { alias, activity: result.activityType, pts: result.points, timestamp: new Date().toISOString() };
- 
+
     document.getElementById('res-pts').textContent = result.points + ' pts';
     document.getElementById('res-activity').textContent = result.activityType || 'Unknown Activity';
     const tierBadge = document.getElementById('res-tier');
@@ -211,27 +210,27 @@ async function gradeSubmission() {
       `<strong>Strength:</strong> ${result.strengths}<br>` +
       `<strong>Growth edge:</strong> ${result.growthEdge}`;
     document.getElementById('result-box').classList.add('show');
- 
+
     // Update session metrics
     sessionGrades.push(result.points);
     sessionTotalPts += result.points;
     document.getElementById('c-graded').textContent = sessionGrades.length;
     document.getElementById('c-avg').textContent = Math.round(sessionTotalPts / sessionGrades.length);
- 
+
   } catch (e) {
     showAlert('alert-clerk', 'Grading error: ' + e.message, 'error');
   }
- 
+
   document.getElementById('grade-btn').disabled = false;
   document.getElementById('grade-loading').classList.remove('show');
 }
- 
+
 async function commitToSheets() {
   if (!window._pendingGrade) return;
   const cfg = getConfig();
   const g = window._pendingGrade;
   document.getElementById('commit-btn').disabled = true;
- 
+
   try {
     if (cfg.gasUrl) {
       await callGAS('commit', g);
@@ -252,7 +251,7 @@ async function commitToSheets() {
   }
   document.getElementById('commit-btn').disabled = false;
 }
- 
+
 function flagReview() {
   if (!window._pendingGrade) return;
   const txns = getTransactions();
@@ -263,7 +262,7 @@ function flagReview() {
   document.getElementById('result-box').classList.remove('show');
   window._pendingGrade = null;
 }
- 
+
 function clearGrade() {
   document.getElementById('submission').value = '';
   document.getElementById('alias').value = '';
@@ -271,11 +270,11 @@ function clearGrade() {
   document.getElementById('result-box').classList.remove('show');
   window._pendingGrade = null;
 }
- 
+
 function getTransactions() {
   try { return JSON.parse(localStorage.getItem(TXN_KEY) || '[]'); } catch { return []; }
 }
- 
+
 function renderTransactions() {
   const txns = getTransactions();
   const el = document.getElementById('transactions');
@@ -296,7 +295,7 @@ function renderTransactions() {
     </div>`;
   }).join('');
 }
- 
+
 // ─── Dashboard ────────────────────────────────────────────────────────────────
 async function loadDashboard() {
   const cfg = getConfig();
@@ -322,7 +321,7 @@ async function loadDashboard() {
     document.getElementById('banner-dashboard').querySelector('div').innerHTML = '<strong>Connection error:</strong> ' + e.message;
   }
 }
- 
+
 function renderFeed(items) {
   const el = document.getElementById('live-feed');
   if (!items.length) { el.innerHTML = '<div style="text-align:center;padding:40px 0;color:var(--ink3);font-size:13px">No recent activity</div>'; return; }
@@ -340,7 +339,7 @@ function renderFeed(items) {
     </div>`;
   }).join('');
 }
- 
+
 function renderBreakdown(breakdown) {
   const el = document.getElementById('activity-breakdown');
   const entries = Object.entries(breakdown);
@@ -356,7 +355,7 @@ function renderBreakdown(breakdown) {
     </div>`;
   }).join('');
 }
- 
+
 // ─── Leaderboard ──────────────────────────────────────────────────────────────
 async function loadLeaderboard() {
   const cfg = getConfig();
@@ -370,7 +369,7 @@ async function loadLeaderboard() {
     el.innerHTML = `<div style="text-align:center;padding:24px;color:var(--warn);font-size:13px">Error: ${e.message}</div>`;
   }
 }
- 
+
 function renderLeaderboard(students) {
   const el = document.getElementById('lb-list');
   if (!students.length) { el.innerHTML = '<div style="text-align:center;padding:40px 0;color:var(--ink3);font-size:13px">No student data yet</div>'; return; }
@@ -391,20 +390,20 @@ function renderLeaderboard(students) {
     </div>`;
   }).join('');
 }
- 
+
 // ─── Agent 2: Advisor & Reporter ──────────────────────────────────────────────
 const streamStates = { diary: true, engage: true, research: true };
- 
+
 function toggleStream(key) {
   streamStates[key] = !streamStates[key];
   document.getElementById('sc-' + key).classList.toggle('on', streamStates[key]);
   document.getElementById('t-' + key).classList.toggle('on', streamStates[key]);
 }
- 
+
 function getDiaryHistory() {
   try { return JSON.parse(localStorage.getItem(DIARY_KEY) || '[]'); } catch { return []; }
 }
- 
+
 function saveDiaryEntry() {
   const text = document.getElementById('diary-entry').value.trim();
   if (!text) return;
@@ -415,18 +414,18 @@ function saveDiaryEntry() {
   document.getElementById('diary-entry').value = '';
   showAlert('alert-diary', 'Diary entry saved (' + history.length + ' entries total)', 'success');
 }
- 
+
 function renderDiaryLabels() {
   const history = getDiaryHistory();
   const el = document.getElementById('diary-history-labels');
   if (!el) return;
   el.innerHTML = history.slice(0, 5).map(e => `<span class="badge badge-purple" style="font-size:10px;cursor:pointer" onclick="loadDiaryEntry('${encodeURIComponent(e.text)}')">${e.date}</span>`).join('');
 }
- 
+
 function loadDiaryEntry(encoded) {
   document.getElementById('diary-entry').value = decodeURIComponent(encoded);
 }
- 
+
 function buildAdvisorPrompt(diaryText, leaderboardSummary, papers) {
   const activeStreams = [];
   if (streamStates.diary && diaryText) activeStreams.push(`=== CLASSROOM DIARY ===\n${diaryText}`);
@@ -436,46 +435,46 @@ function buildAdvisorPrompt(diaryText, leaderboardSummary, papers) {
     activeStreams.push(`=== RESEARCH LIBRARY ===\n${abstracts}`);
   }
   return `You are an expert instructional design consultant and pedagogical advisor. You serve an instructor running a gamified "Agency Passport" program with up to 70 students.
- 
+
 Analyze the following data streams and generate a structured, actionable executive memo. Be specific — cite actual student aliases, real numbers, and named research papers where possible.
- 
+
 ${activeStreams.join('\n\n')}
- 
+
 === YOUR MEMO STRUCTURE (use these exact section headers) ===
- 
+
 ## DIAGNOSTIC SUMMARY
 What are the 2–3 most critical engagement patterns right now? Be specific.
- 
+
 ## DORMANT PORTFOLIO ALERTS
 List students needing a personal check-in. For each, write a one-sentence suggested personal message the instructor could send.
- 
+
 ## LITERATURE-BACKED INSIGHT
 Name one specific paper from the research library that addresses the core bottleneck. Explain the connection directly.
- 
+
 ## NEW PASSPORT ACTIVITY
 Design a new activity to address the engagement gap:
 - Activity name and point value (10, 25, or 50)
 - Pedagogical rationale (2 sentences)
 - Ready-to-copy Padlet prompt text (write this in second person, addressed directly to students, 2–3 paragraphs)
- 
+
 Write in direct, collegial prose — like a trusted consultant. No fluff. The instructor is busy.`;
 }
- 
+
 async function runAdvisor() {
   const email = document.getElementById('memo-email').value.trim();
   const cfg = getConfig();
   if (!cfg.apiKey && !cfg.gasUrl) { showAlert('alert-advisor', 'Add your API key or Apps Script URL in Settings first.', 'error'); return; }
- 
+
   document.getElementById('advisor-btn').disabled = true;
   document.getElementById('advisor-loading').classList.add('show');
   document.getElementById('memo-output').classList.remove('show');
- 
+
   try {
     // Collect diary
     const diaryHistory = getDiaryHistory();
     const currentDiary = document.getElementById('diary-entry').value.trim();
     const allDiary = (currentDiary ? [currentDiary] : []).concat(diaryHistory.map(e => `[${e.date}] ${e.text}`)).slice(0, 5).join('\n\n');
- 
+
     // Collect leaderboard summary
     let lbSummary = '';
     if (streamStates.engage && cfg.gasUrl) {
@@ -489,10 +488,10 @@ async function runAdvisor() {
         lbSummary = `Top 5 students: ${top5}\nDormant portfolios (${dormant.length}): ${dormant.join(', ') || 'none'}\nStudents avoiding high-effort tasks: ${noHighEffort.slice(0, 8).join(', ') || 'none'}\nTotal active: ${students.length}`;
       } catch { lbSummary = 'Leaderboard data unavailable'; }
     }
- 
+
     const papers = getPapers();
     const prompt = buildAdvisorPrompt(allDiary, lbSummary, papers);
- 
+
     let memoText;
     if (cfg.gasUrl) {
       // All AI calls must go server-side — browsers can't call Anthropic API directly
@@ -503,28 +502,28 @@ async function runAdvisor() {
     } else {
       throw new Error('Apps Script URL is required — the Anthropic API cannot be called directly from a browser. Please add your Apps Script URL in Settings.');
     }
- 
+
     renderMemo(memoText);
- 
+
     if (email && cfg.gasUrl) {
       toast('📧 Memo sent to ' + email);
     }
- 
+
   } catch (e) {
     showAlert('alert-advisor', 'Advisor error: ' + e.message, 'error');
   }
- 
+
   document.getElementById('advisor-btn').disabled = false;
   document.getElementById('advisor-loading').classList.remove('show');
 }
- 
+
 function renderMemo(text) {
   const el = document.getElementById('memo-output');
   const now = new Date().toLocaleString('en-US', { weekday: 'long', month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' });
   const lines = text.split('\n');
   let html = `<div style="font-family:'Syne',sans-serif;font-size:17px;font-weight:700;color:var(--ink);margin-bottom:4px">Agency Engine — Instructional Strategy Memo</div>
 <div class="memo-meta">Generated ${now} · claude-sonnet-4-20250514 · ${Object.values(streamStates).filter(Boolean).length} streams active</div>`;
- 
+
   for (const line of lines) {
     const t = line.trim();
     if (!t) { html += '<div style="height:6px"></div>'; continue; }
@@ -540,11 +539,11 @@ function renderMemo(text) {
       html += `<p style="margin:0 0 6px;font-size:13.5px;line-height:1.7">${t.replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>')}</p>`;
     }
   }
- 
+
   el.innerHTML = html;
   el.classList.add('show');
 }
- 
+
 // ─── Research Library ─────────────────────────────────────────────────────────
 function renderPapers() {
   const papers = getPapers();
@@ -556,7 +555,7 @@ function renderPapers() {
       <div style="margin-top:8px">${p.tags.map(t => `<span class="tag">${t}</span>`).join('')}</div>
     </div>`).join('');
 }
- 
+
 // ─── Settings ─────────────────────────────────────────────────────────────────
 function renderSettingsPage() {
   const cfg = getConfig();
@@ -571,7 +570,7 @@ function renderSettingsPage() {
   document.getElementById('dormant-days').value = cfg.dormantDays || 7;
   renderSettingsPapers();
 }
- 
+
 function saveConfig() {
   const existing = getConfig();
   const apiKeyInput = document.getElementById('cfg-api-key').value.trim();
@@ -590,7 +589,7 @@ function saveConfig() {
   showAlert('alert-settings', 'Configuration saved. Apps Script URL: ' + (cfg.gasUrl ? '✓ set' : '✗ missing'), cfg.gasUrl ? 'success' : 'error');
   toast('✅ Settings saved');
 }
- 
+
 function saveScoringRules() {
   const cfg = getConfig();
   cfg.ptsLow = parseInt(document.getElementById('pts-low').value) || 10;
@@ -600,7 +599,7 @@ function saveScoringRules() {
   saveConfigLocal(cfg);
   toast('✅ Scoring rules saved');
 }
- 
+
 function updateSyncStatus(cfg) {
   const el = document.getElementById('sync-status');
   if (cfg.gasUrl) {
@@ -611,7 +610,7 @@ function updateSyncStatus(cfg) {
     el.style.color = '';
   }
 }
- 
+
 function renderSettingsPapers() {
   const papers = getPapers();
   document.getElementById('settings-papers').innerHTML = papers.map((p, i) => `
@@ -623,7 +622,7 @@ function renderSettingsPapers() {
       <button class="btn btn-danger btn-sm" onclick="deletePaper(${i})"><i class="ti ti-trash"></i></button>
     </div>`).join('') || '<div style="color:var(--ink3);font-size:13px;padding:12px 0">No papers. Click Add Paper.</div>';
 }
- 
+
 function deletePaper(i) {
   const papers = getPapers();
   papers.splice(i, 1);
@@ -631,7 +630,7 @@ function deletePaper(i) {
   renderSettingsPapers();
   toast('Paper removed');
 }
- 
+
 function addPaper() {
   const title = prompt('Paper title:');
   if (!title) return;
@@ -645,7 +644,7 @@ function addPaper() {
   renderSettingsPapers();
   toast('Paper added');
 }
- 
+
 // ─── Init ─────────────────────────────────────────────────────────────────────
 (function init() {
   const cfg = getConfig();
