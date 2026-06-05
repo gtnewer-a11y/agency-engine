@@ -113,16 +113,16 @@ function showAlert(id, msg, type = 'info') {
   setTimeout(() => el.classList.remove('show'), 6000);
 }
 
-// ─── GAS Proxy call ───────────────────────────────────────────────────────────
+// ─── GAS Proxy call (GET to avoid CORS issues) ───────────────────────────────
 async function callGAS(action, payload = {}) {
   const cfg = getConfig();
   if (!cfg.gasUrl) throw new Error('No Apps Script URL configured. Please add it in Settings.');
-  const url = cfg.gasUrl;
-  const body = JSON.stringify({ action, ...payload });
-  const resp = await fetch(url, {
-    method: 'POST',
-    headers: { 'Content-Type': 'text/plain' }, // GAS requires text/plain for CORS
-    body
+  const params = new URLSearchParams({
+    action,
+    payload: JSON.stringify(payload)
+  });
+  const resp = await fetch(cfg.gasUrl + '?' + params.toString(), {
+    method: 'GET',
   });
   const text = await resp.text();
   try { return JSON.parse(text); }
