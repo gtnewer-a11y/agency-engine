@@ -279,13 +279,16 @@ textarea{resize:vertical;min-height:110px;line-height:1.6}
           <div class="form-group"><label>Activity Type (optional)</label>
             <select id="activity-type">
               <option value="">— let AI identify —</option>
-              <option>Letter to Future Self</option>
-              <option>Classroom Receipt</option>
-              <option>Concept Map</option>
-              <option>Reflection Journal</option>
-              <option>Peer Review</option>
-              <option>Research Synthesis</option>
-              <option>Creative Extension</option>
+              <option>Goal-Setting Exercise</option>
+              <option>新手村打卡之看老师</option>
+              <option>新手村打卡之开口说英语</option>
+              <option>新手村打卡之小组团建</option>
+              <option>新手村打卡之寻找战友</option>
+              <option>新手村打卡之找到据点</option>
+              <option>Mystery Challenge</option>
+              <option>Teacher Observation</option>
+              <option>Assignment Reflection</option>
+              <option>Final Reflection</option>
             </select>
           </div>
         </div>
@@ -391,9 +394,9 @@ textarea{resize:vertical;min-height:110px;line-height:1.6}
 
       <div class="card">
         <div class="card-hd"><div class="card-title"><i class="ti ti-adjustments"></i>Scoring Rules</div></div>
-        <div class="settings-row"><div><div class="settings-label">Low-effort (Classroom Receipts, brief check-ins)</div><div class="settings-desc">Under 80 words, surface-level</div></div><input type="number" class="settings-input" id="pts-low" value="10"> pts</div>
-        <div class="settings-row"><div><div class="settings-label">Mid-effort (Letters, Journals, Peer Reviews)</div><div class="settings-desc">80–300 words, genuine reflection</div></div><input type="number" class="settings-input" id="pts-mid" value="25"> pts</div>
-        <div class="settings-row"><div><div class="settings-label">High-effort (Research Synthesis, Creative)</div><div class="settings-desc">300+ words, academic integration</div></div><input type="number" class="settings-input" id="pts-high" value="50"> pts</div>
+        <div class="settings-row"><div><div class="settings-label">Newcomer Village Check-ins (新手村打卡)</div><div class="settings-desc">5 activities × 5 pts each</div></div><input type="number" class="settings-input" id="pts-low" value="5"> pts</div>
+        <div class="settings-row"><div><div class="settings-label">Teacher Observation / Assignment Reflection</div><div class="settings-desc">Mid-semester activities</div></div><input type="number" class="settings-input" id="pts-mid" value="10"> pts</div>
+        <div class="settings-row"><div><div class="settings-label">Goal-Setting / Final Reflection / Mystery Challenge</div><div class="settings-desc">Major milestone activities</div></div><input type="number" class="settings-input" id="pts-high" value="30"> pts</div>
         <div class="settings-row"><div><div class="settings-label">Dormant portfolio threshold</div><div class="settings-desc">Days without submission before alert</div></div><input type="number" class="settings-input" id="dormant-days" value="7"> days</div>
         <div style="margin-top:14px"><button class="btn btn-primary" onclick="saveScoringRules()"><i class="ti ti-check"></i>Save Rules</button></div>
       </div>
